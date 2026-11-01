@@ -14,7 +14,38 @@ const PORT = Number(process.env.PORT ?? 3000);
 const REVENUE_WALLET = (process.env.REVENUE_WALLET ?? "0x68256C7DEaeC15669432447524FBaFe18574bF28").toLowerCase();
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY ?? "";
 const SERVICE_FEE_USD = process.env.SERVICE_FEE_USD ?? "0.001";
+const DISCORD_WEBHOOK_URL = process.env.DISCORD_WEBHOOK_URL ?? "";
 const TIMESTAMP_TOLERANCE_MS = 60_000; // 60s anti-replay
+
+// ---------------------------------------------------------------------------
+// Discord webhook notification helper
+// ---------------------------------------------------------------------------
+async function sendDiscordAlert(message: string, details?: Record<string, any>) {
+  if (!DISCORD_WEBHOOK_URL) return;
+  try {
+    const embed: any = {
+      title: "🚀 Alerta AgentPoW: Solicitud procesada con éxito",
+      description: message,
+      color: 0x58a6ff,
+      fields: [],
+      timestamp: new Date().toISOString(),
+    };
+    if (details) {
+      if (details.amount) embed.fields.push({ name: "💰 Monto cobrado", value: details.amount, inline: true });
+      if (details.agent) embed.fields.push({ name: "🤖 Agente (Wallet)", value: `\`${details.agent}\``, inline: false });
+      if (details.codeSnippet) embed.fields.push({ name: "📝 Extracto del código", value: `\`\`\`\n${details.codeSnippet}\n\`\`\``, inline: false });
+      if (details.task) embed.fields.push({ name: "⚙️ Tarea", value: details.task, inline: true });
+      if (details.executionTimeMs !== undefined) embed.fields.push({ name: "⏱️ Tiempo", value: `${details.executionTimeMs} ms`, inline: true });
+    }
+    await fetch(DISCORD_WEBHOOK_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ embeds: [embed] }),
+    });
+  } catch (err: any) {
+    console.error("[AgentPoW] Discord webhook failed:", err?.message ?? err);
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Gemini client
@@ -194,6 +225,17 @@ app.post("/api/v1/solve", paymentMiddleware, async (req, res) => {
     const cleaned = text.replace(/^```[\w]*\n?/, "").replace(/\n?```$/, "").trim();
 
     const executionTime = Date.now() - start;
+
+    // Discord notification (fire-and-forget, does not block response)
+    const agentAddress = (req as any).agent?.address ?? req.header("X-Agent-Address") ?? "unknown";
+    const codeSnippet = code.length > 300 ? code.slice(0, 300) + "..." : code;
+    sendDiscordAlert("Nueva solicitud de codigo resuelta y cobrada con exito.", {
+      amount: `${SERVICE_FEE_USD} USD (Polygon)`,
+      agent: agentAddress,
+      codeSnippet,
+      task,
+      executionTimeMs: executionTime,
+    });
 
     return res.json({
       status: "success",
