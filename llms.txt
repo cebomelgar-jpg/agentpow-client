@@ -1,0 +1,78 @@
+# AgentPoW
+
+> Micro-servicio backend ultra-ligero para agentes de IA autonomos. Optimizacion, correccion y refactorizacion de codigo impulsada por Google Gemini (gemini-1.5-flash), con monetizacion instantanea por peticion mediante firmas criptograficas off-chain (EIP-712/ECDSA) en la red Polygon.
+
+## Proposito
+
+AgentPoW expone una API que recibe un fragmento de codigo y una tarea (`fix`, `optimize` o `refactor`) y devuelve el codigo resuelto/optimizado por un modelo LLM (Google Gemini). Cada peticion exitosa se cobra a razon de $0.001 USD, pagado off-chain firmando un mensaje EIP-191 con la wallet del agente. No requiere base de datos de usuarios: la autenticacion se basa unicamente en la firma criptografica.
+
+## Monetizacion
+
+- Fee por peticion: `0.001 USD`
+- Red: Polygon
+- Direccion de recepcion (treasury): `0x68256c7deaec15669432447524fbafe18574bf28`
+- Formato de pago: firma ECDSA (EIP-191 `personal_sign`) sobre un mensaje canonico que incluye direccion, timestamp, fee y direccion de recepcion.
+- Ventana de validez del timestamp: 60 segundos (anti-replay).
+- Si la firma es invalida o falta, la API responde HTTP 402 (Payment Required) con las instrucciones de pago.
+
+## Endpoints
+
+### GET /health
+Health check. No requiere autenticacion.
+Respuesta: `{"status":"ok","service":"agentpow","version":"1.0.0"}`
+
+### GET /api/v1/payment-info
+Devuelve las instrucciones de pago y el formato del mensaje firmado. No requiere autenticacion.
+Respuesta incluye: `fee_usd`, `pay_to`, `network`, `auth_format`, `signed_message_format`, `headers_required`, `timestamp_tolerance_seconds`.
+
+### POST /api/v1/solve
+Resuelve/optimiza/refactoriza codigo. Requiere headers de pago.
+
+Body (JSON):
+```json
+{ "code": "string con codigo", "task": "fix|optimize|refactor" }
+```
+
+Headers requeridos:
+- `X-Agent-Address`: billetera publica del agente (0x...)
+- `X-Agent-Signature`: firma hex (EIP-191) del mensaje canonico
+- `X-Agent-Timestamp`: timestamp UNIX en milisegundos
+
+Respuesta exitosa (200):
+```json
+{
+  "status": "success",
+  "result": "codigo_resuelto",
+  "execution_time_ms": 230,
+  "fee_charged": "0.001 USD"
+}
+```
+
+Respuesta sin pago (402):
+```json
+{
+  "error": "Payment Required",
+  "fee_usd": 0.001,
+  "pay_to": "0x68256c7deaec15669432447524fbafe18574bf28",
+  "network": "Polygon",
+  "auth_format": "EIP-712 Signature in Headers"
+}
+```
+
+## Mensaje canonico firmado
+
+```
+AgentPoW Payment Authorization
+Address: <agent_address>
+Timestamp: <timestamp_ms>
+Fee: 0.001 USD
+PayTo: 0x68256c7deaec15669432447524fbafe18574bf28
+```
+
+## Base URL de produccion
+
+`https://agentpow-client.vercel.app`
+
+## Descubrimiento para agentes
+
+Ver `agents.json` en la raiz del proyecto para metadata ejecutable (formato de pago, red, esquema de autenticacion).

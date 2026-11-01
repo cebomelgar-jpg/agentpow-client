@@ -1,0 +1,53 @@
+{
+  "name": "AgentPoW",
+  "version": "1.0.0",
+  "description": "Micro-servicio backend para agentes de IA autonomos: optimizacion, correccion y refactorizacion de codigo impulsada por Google Gemini, con monetizacion instantanea por peticion mediante firmas EIP-712/ECDSA off-chain en Polygon.",
+  "base_url": "https://agentpow-client.vercel.app",
+  "endpoints": {
+    "health": {
+      "method": "GET",
+      "path": "/health",
+      "auth_required": false
+    },
+    "payment_info": {
+      "method": "GET",
+      "path": "/api/v1/payment-info",
+      "auth_required": false
+    },
+    "solve": {
+      "method": "POST",
+      "path": "/api/v1/solve",
+      "auth_required": true,
+      "request_body": {
+        "code": "string",
+        "task": "fix | optimize | refactor"
+      },
+      "response": {
+        "status": "success",
+        "result": "string",
+        "execution_time_ms": "number",
+        "fee_charged": "string"
+      }
+    }
+  },
+  "payment": {
+    "fee_usd": 0.001,
+    "currency": "USD",
+    "network": "Polygon",
+    "recipient": "0x68256c7deaec15669432447524fbafe18574bf28",
+    "format": "EIP-191 personal_sign (ECDSA) over canonical message",
+    "timestamp_tolerance_seconds": 60,
+    "replay_protection": "timestamp window (60s)"
+  },
+  "auth": {
+    "type": "EIP-712/ECDSA off-chain signature",
+    "headers": {
+      "X-Agent-Address": "wallet public address (0x...)",
+      "X-Agent-Signature": "hex signature of canonical message",
+      "X-Agent-Timestamp": "unix timestamp in milliseconds"
+    },
+    "canonical_message": "AgentPoW Payment Authorization\\nAddress: <agent_address>\\nTimestamp: <timestamp_ms>\\nFee: 0.001 USD\\nPayTo: 0x68256c7deaec15669432447524fbafe18574bf28"
+  },
+  "model": "gemini-1.5-flash",
+  "tasks": ["fix", "optimize", "refactor"]
+}
