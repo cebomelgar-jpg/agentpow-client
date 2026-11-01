@@ -1,0 +1,27 @@
+{
+  "name": "agentpow",
+  "version": "1.0.0",
+  "description": "AgentPoW - Micro-servicio backend ultra-ligero para agentes de IA con verificacion de pagos off-chain y motor Google Gemini",
+  "main": "dist/server.js",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "preview": "tsx src/server.ts"
+  },
+  "keywords": ["agentpow", "ai", "gemini", "web3", "micropayment", "express"],
+  "license": "MIT",
+  "dependencies": {
+    "@google/generative-ai": "^0.21.0",
+    "dotenv": "^16.4.5",
+    "ethers": "^6.13.0",
+    "express": "^4.19.2",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.14.0",
+    "tsx": "^4.16.0",
+    "typescript": "^5.5.0"
+  }
+}
