@@ -343,12 +343,17 @@ async function solve() {
 </html>`;
 
 // ---------------------------------------------------------------------------
-// Start server
+// Start server (local dev only; Vercel uses the exported app as serverless fn)
 // ---------------------------------------------------------------------------
-app.listen(PORT, () => {
-  console.log(`\n⚡ AgentPoW running on http://localhost:${PORT}`);
-  console.log(`   Health:        http://localhost:${PORT}/health`);
-  console.log(`   Payment info:  http://localhost:${PORT}/api/v1/payment-info`);
-  console.log(`   Solve:         POST http://localhost:${PORT}/api/v1/solve`);
-  console.log(`   UI:            http://localhost:${PORT}/\n`);
-});
+if (process.env.VERCEL !== "1") {
+  app.listen(PORT, () => {
+    console.log(`\n⚡ AgentPoW running on http://localhost:${PORT}`);
+    console.log(`   Health:        http://localhost:${PORT}/health`);
+    console.log(`   Payment info:  http://localhost:${PORT}/api/v1/payment-info`);
+    console.log(`   Solve:         POST http://localhost:${PORT}/api/v1/solve`);
+    console.log(`   UI:            http://localhost:${PORT}/\n`);
+  });
+}
+
+// Export for Vercel serverless runtime
+export default app;
