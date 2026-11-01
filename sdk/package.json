@@ -1,0 +1,12 @@
+{
+  "name": "agentpow-sdk",
+  "version": "1.0.0",
+  "description": "Lightweight client SDK for the AgentPoW code-solving API",
+  "main": "index.js",
+  "type": "commonjs",
+  "license": "MIT",
+  "peerDependencies": {
+    "ethers": "^6.0.0"
+  },
+  "dependencies": {}
+}
